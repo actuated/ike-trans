@@ -25,7 +25,7 @@ An IKE mode and target mode are required. Additional options include **-n [strin
 ```
 # ./ike-trans.sh -a -t 1.2.3.4 -n vpn
 
-============[ ike-trans.sh - tedr@tracesecurity.com ]============
+===========[ ike-trans.sh - Ted R (github: actuated) ]===========
 
 Aggressive Mode selected (ike-scan -A -M -n vpn).
 Running in single host mode against 1.2.3.4.

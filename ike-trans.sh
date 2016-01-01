@@ -1,6 +1,6 @@
 #!/bin/bash
 # ike-trans.sh
-# 10/30/2015 by tedr@tracesecurity.com
+# 10/30/2015 by Ted R (http://github.com/actuated)
 # Adapted from original ike.sh script by Josh Stone
 # Which was adapted from http://www.nta-monitor.com/wiki/index.php/Ike-scan_User_Guide
 # This script provides customizable IKE transforms scanning.
@@ -10,7 +10,10 @@
 # 10/30/2015 - Changed varIkeOpts and varAMAppend setting to be part of varIkeMode check instead of input option processing
 # 10/31/2015 - Changed output to grep for SA, changed order of transform and example syntax
 # 12/15/2015 - Fixed problem with SA grep/awk not showing ENC type
+# 1/1/2016 - Aesthetic change
 
+varDateCreated="10/30/2015"
+varLastMod="1/1/2016"
 varIkeMode="null" # Variable to set Main or Aggressive Mode IKE
 varRunMode="null" # Varaible to set list or file targeting
 varIkeOpts="null" # Variable to give ike-scan options based on IKE mode
@@ -24,11 +27,13 @@ varOutFile="" # Variable for the name of the output file
 function usage
 {
   echo
-  echo "============[ ike-trans.sh - tedr@tracesecurity.com ]============"
+  echo "===========[ ike-trans.sh - Ted R (github: actuated) ]==========="
   echo
   echo "Customizable IKE transforms scanner."
   echo "Adapted from script at:"
   echo "  http://www.nta-monitor.com/wiki/index.php/Ike-scan_User_Guide."
+  echo
+  echo "Created $varDateCreated, Last Modified $varLastMod."
   echo
   echo "============================[ usage ]============================"
   echo
@@ -212,7 +217,7 @@ fi
 
 # Display interpreted parameters to the use before running
 echo
-echo "============[ ike-trans.sh - tedr@tracesecurity.com ]============"
+echo "===========[ ike-trans.sh - Ted R (github: actuated) ]==========="
 echo
 if [ "$varIkeMode" = "main" ]; then echo "Main Mode selected (ike-scan $varIkeOpts)."; fi
 if [ "$varIkeMode" = "aggr" ]; then echo "Aggressive Mode selected (ike-scan $varIkeOpts)."; fi
