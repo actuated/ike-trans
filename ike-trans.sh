@@ -33,7 +33,7 @@ function usage
   echo "Adapted from script at:"
   echo "  http://www.nta-monitor.com/wiki/index.php/Ike-scan_User_Guide."
   echo
-  echo "Created $varDateCreated, Last Modified $varLastMod."
+  echo "Created $varDateCreated, last modified $varLastMod."
   echo
   echo "============================[ usage ]============================"
   echo
