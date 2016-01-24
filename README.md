@@ -20,6 +20,7 @@ An IKE mode and target mode are required. Additional options include **-n [strin
 
 * **-n [string]** specifies a custom group ID to use for Aggressive Mode. The default is "admin".
 * **-o [filename]** specifies the name of an output file to copy results to.
+* **--no-id-check** disables the check for INVALID-ID-INFORMATION in the response. By default, if this response is received, the script will report it and stop checking that host. This is desired, as it would be best to find a working transform with Main Mode, and then use `ike-force` by Spider Labs to do a dictionary attack for a working group ID.
 
 # Example
 ```
