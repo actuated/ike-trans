@@ -11,9 +11,10 @@
 # 10/31/2015 - Changed output to grep for SA, changed order of transform and example syntax
 # 12/15/2015 - Fixed problem with SA grep/awk not showing ENC type
 # 1/1/2016 - Aesthetic change
+# 1/24/2016 - Added elif to check response for INVALID-ID-INFORMATION, --no-id-check to ignore
 
 varDateCreated="10/30/2015"
-varLastMod="1/1/2016"
+varLastMod="1/24/2016"
 varIkeMode="null" # Variable to set Main or Aggressive Mode IKE
 varRunMode="null" # Varaible to set list or file targeting
 varIkeOpts="null" # Variable to give ike-scan options based on IKE mode
@@ -22,6 +23,7 @@ varTarget="null" # Variable for target host or input file
 varTest="" # Variable used to check input IPs and custom group name
 varAMAppend="" # Variable to add -Ppsk.txt to the end of example syntax for Aggressive Mode responses
 varOutFile="" # Variable for the name of the output file
+varCheckID="Y" # Variable to flag whether to check Aggressive Mode responses for INVALID-ID-INFORMATION and stop checking that host
 
 # Function for providing help/usage text
 function usage
@@ -53,6 +55,9 @@ function usage
   echo "default 'admin' (for Aggressive Mode)."
   echo -e "  -n [name]"
   echo
+  echo "Do not check for and stop on INVALID-ID-INFORMATION."
+  echo -e "  --no-id-check"
+  echo
   echo "Output: Optionally provide an output file."
   echo -e "  -o [name]"
   echo
@@ -70,13 +75,20 @@ function ike_trans
       for AUTH in 1 3 64221 65001; do
         for GROUP in 1 2 5; do
           RESPONSE=`ike-scan $varIkeOpts --trans=$ENC,$HASH,$AUTH,$GROUP $1`
-          echo "$RESPONSE" | grep -i handshake\ returned > /dev/null
-          if [ "$?" -eq "0" ] ; then
+          varFlagReturned=$(echo "$RESPONSE" | grep -i 'handshake returned')
+          if [ "$varCheckID" = "Y" ]; then varFlagInvalidID=$(echo "$RESPONSE" | grep -i 'invalid-id-information'); fi
+          if [ "$varFlagReturned" != "" ] ; then
             echo
             echo "[$varCount] SYNTAX: ike-scan $varIkeOpts --trans=$ENC,$HASH,$AUTH,$GROUP $1 $varAMAppend"
             echo "TRANSFORM: $ENC,$HASH,$AUTH,$GROUP"
-            echo "$RESPONSE" | grep 'SA=' | awk '{print $1,$2, $3, $4, $5 }'
+            echo "$RESPONSE" | grep 'SA=' | awk '{print $1, $2, $3, $4, $5 }' | sed 's/SA=(//g'
             let varCount=varCount+1
+          elif [ "$varFlagInvalidID" != "" ]; then
+            echo
+            echo "[*] INVALID-ID-INFORMATION:"
+            echo "Find transforms with main mode and use ike-force to find ID"
+            echo
+            return
           else
             echo -n "."
           fi
@@ -181,6 +193,8 @@ while [ "$1" != "" ]; do
            exit
          fi
          ;;
+    --no-id-check ) varCheckID="N"
+         ;;
 # Display usage information if -h or an invalid option are given
     -h ) usage
          exit
@@ -223,6 +237,8 @@ if [ "$varIkeMode" = "main" ]; then echo "Main Mode selected (ike-scan $varIkeOp
 if [ "$varIkeMode" = "aggr" ]; then echo "Aggressive Mode selected (ike-scan $varIkeOpts)."; fi
 if [ "$varRunMode" = "host" ]; then echo "Running in single host mode against $varTarget."; fi
 if [ "$varRunMode" = "list" ]; then echo "Running in list target mode against $varTarget. Non-IP lines will be skipped."; fi
+if [ "$varCheckID" = "Y" ]; then echo "Checking for INVALID-ID-INFORMATION."; fi
+if [ "$varCheckID" = "N" ]; then echo "Not checking for INVALID-ID-INFORMATION."; fi
 if [ "$varOutFile" != "" ]; then echo "Output enabled to $varOutFile."; fi
 echo
 read -p "Press Enter to begin..."
