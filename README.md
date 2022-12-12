@@ -46,7 +46,7 @@ Enc=3DES Hash=SHA1 Group=2:modp1024 Auth=PSK LifeType=Seconds
 TRANSFORM: 5,2,65001,2
 Enc=3DES Hash=SHA1 Group=2:modp1024 Auth=XAUTH LifeType=Seconds
 
-[2] SYNTAX: ike-scan -2 -g 2 1.2.3.4
+[3] SYNTAX: ike-scan -2 -g 2 1.2.3.4
 GROUP: 2
 Encr=AES_CBC,KeyLength=256 Prf=HMAC_SHA1 Integ=HMAC_SHA1_96 DH_Group=2:modp1024
 
