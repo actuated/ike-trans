@@ -1,8 +1,9 @@
 #!/bin/bash
 # ike-trans.sh
-# 10/30/2015 by Ted R (http://github.com/actuated)
+# 10/30/2015 by Ted R (https://github.com/actuated)
 # Adapted from original ike.sh script by Josh Stone
 # Which was adapted from http://www.nta-monitor.com/wiki/index.php/Ike-scan_User_Guide
+# Enhanced by Jan Rude (https://github.com/whoot)
 # This script provides customizable IKE transforms scanning.
 # It can call IKE-SCAN in Main (-m) and Aggressive (-a) modes.
 # It can use a target IP (-t) or loop through a file of IPs (-f).
@@ -12,9 +13,10 @@
 # 12/15/2015 - Fixed problem with SA grep/awk not showing ENC type
 # 1/1/2016 - Aesthetic change
 # 1/24/2016 - Added elif to check response for INVALID-ID-INFORMATION, --no-id-check to ignore
+# 12/12/2022 - Added audit parameter, IKEv2 support, bugfixes for aggressive mode and better progress spinning animation
 
 varDateCreated="10/30/2015"
-varLastMod="1/24/2016"
+varLastMod="12/12/2022"
 varIkeMode="null" # Variable to set Main or Aggressive Mode IKE
 varRunMode="null" # Varaible to set list or file targeting
 varIkeOpts="null" # Variable to give ike-scan options based on IKE mode
@@ -24,6 +26,10 @@ varTest="" # Variable used to check input IPs and custom group name
 varAMAppend="" # Variable to add -Ppsk.txt to the end of example syntax for Aggressive Mode responses
 varOutFile="" # Variable for the name of the output file
 varCheckID="Y" # Variable to flag whether to check Aggressive Mode responses for INVALID-ID-INFORMATION and stop checking that host
+ENCLIST="1 5 7/128 7/192 7/256" # Encryption algorithms: DES, Triple-DES, AES/128, AES/192 and AES/256
+HASHLIST="1 2" # Hash algorithms: MD5, SHA1
+AUTHLIST="1 3 64221 65001" # Authentication methods: Pre-Shared Key, RSA Signatures Hybrid Mode and XAUTH
+GROUPLIST="1 2 5" # Diffie-Hellman groups
 
 # Function for providing help/usage text
 function usage
@@ -55,6 +61,9 @@ function usage
   echo "default 'admin' (for Aggressive Mode)."
   echo -e "  -n [name]"
   echo
+  echo "Perform audit of all IKE Transformations."
+  echo -e "  --audit"
+  echo
   echo "Do not check for and stop on INVALID-ID-INFORMATION."
   echo -e "  --no-id-check"
   echo
@@ -64,40 +73,59 @@ function usage
   exit
 }
 
+spin() {
+   local -a marks=( '┤' '┘' '┴' '└' '├' '┌' '┬' '┐' )
+   printf '%s\r' "${marks[i++ % ${#marks[@]}]}"
+ }
+
 # Function to perform IKE transforms scan for the provided host
 # Loop through possible transforms settings, displaying the transform, example ike-scan syntax, and response for each working transform
 function ike_trans
 {
-  echo $1:
+  echo "$1"
   varCount=1
-  for ENC in 1 5 7/128 7/192 7/256; do
-    for HASH in 1 2; do
-      for AUTH in 1 3 64221 65001; do
-        for GROUP in 1 2 5; do
-          RESPONSE=`ike-scan $varIkeOpts --trans=$ENC,$HASH,$AUTH,$GROUP $1`
+  # Check Ikev1
+  for ENC in $ENCLIST; do
+    for HASH in $HASHLIST; do
+      for AUTH in $AUTHLIST; do
+        for GROUP in $GROUPLIST; do
+          RESPONSE=`ike-scan $varIkeOpts --multiline --trans=$ENC,$HASH,$AUTH,$GROUP $1`
           varFlagReturned=$(echo "$RESPONSE" | grep -i 'handshake returned')
           if [ "$varCheckID" = "Y" ]; then varFlagInvalidID=$(echo "$RESPONSE" | grep -i 'invalid-id-information'); fi
-          if [ "$varFlagReturned" != "" ] ; then
-            echo
+          if [ "$varFlagReturned" != "" ]; then
+            echo -e "\033[2K"
             echo "[$varCount] SYNTAX: ike-scan $varIkeOpts --trans=$ENC,$HASH,$AUTH,$GROUP $1 $varAMAppend"
             echo "TRANSFORM: $ENC,$HASH,$AUTH,$GROUP"
             echo "$RESPONSE" | grep 'SA=' | awk '{print $1, $2, $3, $4, $5 }' | sed 's/SA=(//g'
             let varCount=varCount+1
           elif [ "$varFlagInvalidID" != "" ]; then
-            echo
+            echo -e "\033[2K"
             echo "[*] INVALID-ID-INFORMATION:"
-            echo "Find transforms with main mode and use ike-force to find ID"
-            echo
+            echo "Find transforms with main mode and brute-force ID with ike-force"
+            echo -e "\033[2K"
             return
           else
-            echo -n "."
+            spin
           fi
         done
       done
     done
-    echo
   done
-  echo
+  # Check IKEv2
+  for GROUP in 1 2 5 14 15 16 17 18 19 20 21; do
+    RESPONSE=`ike-scan -2 --multiline -g $GROUP $1`
+    varFlagReturned=$(echo "$RESPONSE" | grep -i 'handshake returned')
+    if [ "$varFlagReturned" != "" ]; then
+          echo -e "\033[2K"
+          echo "[$varCount] SYNTAX: ike-scan -2 -g $GROUP $1"
+          echo "GROUP: $GROUP"
+          echo "$RESPONSE" | grep 'SA=' | awk '{print $1, $2, $3, $4, $5 }' | sed 's/SA=(//g;s/)//g;s/Encr/Enc/;s/,/ /;s/DH_//'
+          let varCount=varCount+1
+    else
+      spin
+    fi
+  done
+  echo -e "\033[2K"
 }
 
 # List-mode function to retrieve hosts from the list and call the ike_trans function for each
@@ -175,6 +203,13 @@ while [ "$1" != "" ]; do
          else
            varIkeName="admin"
          fi
+         ;;
+# Use all known transformations
+    --audit ) shift
+         ENCLIST="1 2 3 4 5 6 7/128 7/192 7/256 8" # Encryption algorithms: DES, IDEA, Blowfish, RC5, Triple-DES, CAST, AES/128, AES/192 and AES/256, Camellia
+         HASHLIST="1 2 3 4 5 6" # Hash algorithms: MD5, SHA1, Tiger, SHA2-256, SHA2-384, SHA2-512
+         AUTHLIST="1 2 3 4 5 6 7 8 64221 64222 64223 64224 65001 65002 65003 65004 65005 65006 65007 65008 65009 65010" # Authentication methods: Pre-Shared Key, RSA Signatures Hybrid Mode and XAUTH
+         GROUPLIST="1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 31" # Diffie-Hellman groups
          ;;
 # Set output file, error if input is not provided or output file already exists
     -o ) shift

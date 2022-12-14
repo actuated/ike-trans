@@ -18,6 +18,7 @@ An IKE mode and target mode are required. Additional options include **-n [strin
 
 **Optional Parameters**
 
+* **--audit** performs audit of all IKE transformations.
 * **-n [string]** specifies a custom group ID to use for Aggressive Mode. The default is "admin".
 * **-o [filename]** specifies the name of an output file to copy results to.
 * **--no-id-check** disables the check for INVALID-ID-INFORMATION in the response. By default, if this response is received, the script will report it and stop checking that host. This is desired, as it would be best to find a working transform with Main Mode, and then use `ike-force` by Spider Labs to do a dictionary attack for a working group ID.
@@ -35,20 +36,19 @@ Press Enter to begin...
 
 =============================[ run ]=============================
 
-1.2.3.4:
-........................
-.............
+1.2.3.4
+
 [1] SYNTAX: ike-scan -A -M -n vpn --trans=5,2,1,2 1.2.3.4 -Ppsk.txt
 TRANSFORM: 5,2,1,2
-SA=(Enc=3DES Hash=SHA1 Group=2:modp1024 Auth=PSK LifeType=Seconds
-........
+Enc=3DES Hash=SHA1 Group=2:modp1024 Auth=PSK LifeType=Seconds
+
 [2] SYNTAX: ike-scan -A -M -n vpn --trans=5,2,65001,2 1.2.3.4 -Ppsk.txt
 TRANSFORM: 5,2,65001,2
-SA=(Enc=3DES Hash=SHA1 Group=2:modp1024 Auth=XAUTH LifeType=Seconds
-.
-........................
-........................
-........................
+Enc=3DES Hash=SHA1 Group=2:modp1024 Auth=XAUTH LifeType=Seconds
+
+[3] SYNTAX: ike-scan -2 -g 2 1.2.3.4
+GROUP: 2
+Encr=AES_CBC,KeyLength=256 Prf=HMAC_SHA1 Integ=HMAC_SHA1_96 DH_Group=2:modp1024
 
 =============================[ fin ]=============================
 ```
