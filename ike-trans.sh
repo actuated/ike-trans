@@ -52,7 +52,6 @@ function usage
   echo "IKE Mode Parameters: Must supply only one."
   echo -e "  -m \t\t Main Mode"
   echo -e "  -a \t\t Aggressive Mode"
-  echo -e "  -2 \t\t Use IKEv2"
   echo
   echo "Target Paramters: Must supply only one."
   echo -e "  -t [host ip] \t IP address of a single target"
