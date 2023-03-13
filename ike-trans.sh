@@ -112,7 +112,7 @@ function ike_trans
     done
   done
   # Check IKEv2
-  for GROUP in 1 2 5 14 15 16 17 18 19 20 21; do
+  for GROUP in 1 2 5 14 15 16 17 18; do
     RESPONSE=`ike-scan -2 --multiline -g $GROUP $1`
     varFlagReturned=$(echo "$RESPONSE" | grep -i 'handshake returned')
     if [ "$varFlagReturned" != "" ]; then
@@ -178,7 +178,7 @@ while [ "$1" != "" ]; do
            if [ "$varTest" = "3" ]; then
              varTarget=$1
            else
-             echo             
+             echo
              echo "Error: $1 does not appear to be a target host IP for -t."
              usage
              exit
